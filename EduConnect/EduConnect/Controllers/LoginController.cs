@@ -46,7 +46,7 @@ namespace EduConnect.Controllers
                 Email = userEmail,
                 UserRole = userId
             };
-            return BadRequest(result);
+            return Ok(result);
         }
     }
 }
