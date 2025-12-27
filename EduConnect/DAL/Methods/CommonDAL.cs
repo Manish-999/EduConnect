@@ -1,10 +1,15 @@
-﻿using Dapper;
+﻿using DAL.Interfaces;
+using Dapper;
+using Model;
 using Npgsql;
 
 namespace DAL.Methods
 {
-    public class CommonDAL
+    public class CommonDAL: ICommonDAL
     {
+        private readonly List<SchoolRegistrationRequest> _schoolList = new();
+        private readonly List<TeacherRegistrationRequest> _teacherList = new();
+        private readonly List<StudentRegistrationRequest> _studentList = new();
         public CommonDAL()
         {
 
@@ -27,6 +32,33 @@ namespace DAL.Methods
                 Console.WriteLine(ex);
             }
             return null;
+        }
+        public async Task<bool> SaveSchool(SchoolRegistrationRequest request)
+        {
+            _schoolList.Add(request);
+            return true;
+        }
+        public async Task<bool> SaveTeacher(TeacherRegistrationRequest request)
+        {
+            _teacherList.Add(request);
+            return true;
+        }
+        public async Task<bool> SaveStudent(StudentRegistrationRequest request)
+        {
+            _studentList.Add(request);
+            return true;
+        }
+        public async Task<List<SchoolRegistrationRequest>> GetAllSchool()
+        {
+            return _schoolList;
+        }
+        public async Task<List<TeacherRegistrationRequest>> GetAllTeacher()
+        {
+            return _teacherList;
+        }
+        public async Task<List<StudentRegistrationRequest>> GetAllStudent()
+        {
+            return _studentList;
         }
     }
 }

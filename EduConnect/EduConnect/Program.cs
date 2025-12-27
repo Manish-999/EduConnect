@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using DAL.Interfaces;
+using DAL.Methods;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Model;
@@ -69,8 +71,10 @@ builder.Services.AddSwaggerGen(c =>
 
 _ = builder.Services.Configure<JWTOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddTransient<ICommonService, CommonService>();
+builder.Services.AddTransient<ISchoolService, SchoolService>();
+builder.Services.AddSingleton<ICommonDAL, CommonDAL>();
 var app = builder.Build();
-
+app.UseCors("AllowAll");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
