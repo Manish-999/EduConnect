@@ -105,20 +105,20 @@ namespace Model
         public string ParentSignature { get; set; }
 
         // Documents (File Uploads)
-        //public IFormFile? Photo { get; set; }
+        public IFormFile? Photo { get; set; }
 
-        //public IFormFile? BirthCertificate { get; set; }
+        public IFormFile? BirthCertificate { get; set; }
 
-        //public IFormFile? StudentAadhar { get; set; }
+        public IFormFile? StudentAadhar { get; set; }
 
-        //public IFormFile? ParentAadharDoc { get; set; }
+        public IFormFile? ParentAadharDoc { get; set; }
 
-        //public IFormFile? ReportCard { get; set; }
+        public IFormFile? ReportCard { get; set; }
 
-        //public IFormFile? TransferCertificate { get; set; }
+        public IFormFile? TransferCertificate { get; set; }
 
-        //public IFormFile? CasteCertificate { get; set; }
+        public IFormFile? CasteCertificate { get; set; }
 
-        //public IFormFile? IncomeCertificate { get; set; }
+        public IFormFile? IncomeCertificate { get; set; }
     }
 }

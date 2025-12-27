@@ -16,19 +16,19 @@ namespace EduConnect.Controllers
             _schoolService = schoolService;
         }
         [HttpPost]
-        public async Task<IActionResult> SaveSchool([FromBody] SchoolRegistrationRequest request)
+        public async Task<IActionResult> SaveSchool([FromForm] SchoolRegistrationRequest request)
         {
             var result = await _schoolService.SaveSchool(request);
             return Ok(result);
         }
         [HttpPost]
-        public async Task<IActionResult> SaveTeacher([FromBody] TeacherRegistrationRequest request)
+        public async Task<IActionResult> SaveTeacher([FromForm] TeacherRegistrationRequest request)
         {
             var result = await _schoolService.SaveTeacher(request);
             return Ok(result);
         }
         [HttpPost]
-        public async Task<IActionResult> SaveStudent([FromBody] StudentRegistrationRequest request)
+        public async Task<IActionResult> SaveStudent([FromForm] StudentRegistrationRequest request)
         {
             var result = await _schoolService.SaveStudent(request);
             return Ok(result);

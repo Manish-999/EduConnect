@@ -49,8 +49,8 @@ namespace Model
         public bool TermsAccepted { get; set; }
 
         // For file upload (multipart/form-data)
-        //public IFormFile? SchoolLogo { get; set; }
+        public IFormFile? SchoolLogo { get; set; }
 
-        //public IFormFile? AffiliationCertificate { get; set; }
+        public IFormFile? AffiliationCertificate { get; set; }
     }
 }

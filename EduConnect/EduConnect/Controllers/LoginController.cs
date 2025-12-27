@@ -19,6 +19,14 @@ namespace EduConnect.Controllers
         {
             if (request.UserName == "Admin") {
                 if (request.Password == "Password") {
+                    var result = await _commonService.GenerateTokenAsync(request.UserName, 2);
+                    return Ok(result);
+                }
+            }
+            if (request.UserName == "SuperAdmin")
+            {
+                if (request.Password == "Password")
+                {
                     var result = await _commonService.GenerateTokenAsync(request.UserName, 1);
                     return Ok(result);
                 }
@@ -31,11 +39,12 @@ namespace EduConnect.Controllers
         public async Task<IActionResult> GetAllDetails()
         {
             var userIdClaim = User?.Claims?.FirstOrDefault(c => c.Type.Equals("UserId", StringComparison.OrdinalIgnoreCase));
+            var userEmail = int.TryParse(userIdClaim?.Value, out int userId) ? (userId == 1) ? "admin@gmail.com" : "SuperAdmin@gmail.com" : "";
             var result = new UserModel()
             {
-                UserId = int.TryParse(userIdClaim?.Value, out int userId)?userId:0,
-                Email = "Admin@gmail.com",
-                UserRole = 1
+                UserId = userId,
+                Email = userEmail,
+                UserRole = userId
             };
             return BadRequest(result);
         }

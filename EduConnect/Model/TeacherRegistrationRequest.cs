@@ -116,12 +116,12 @@ namespace Model
         public bool TermsAccepted { get; set; }
 
         // Documents (File Uploads)
-        //public IFormFile? Photo { get; set; }
+        public IFormFile? Photo { get; set; }
 
-        //public IFormFile? Resume { get; set; }
+        public IFormFile? Resume { get; set; }
 
-        //public IFormFile? AadharCard { get; set; }
+        public IFormFile? AadharCard { get; set; }
 
-        //public IFormFile? Certificates { get; set; }
+        public IFormFile? Certificates { get; set; }
     }
 }
