@@ -17,13 +17,13 @@ namespace EduConnect.Controllers
         [Route("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestModel request)
         {
-            if (request.UserName == "Admin") {
+            if (request.UserName == "admin@yopmail.com") {
                 if (request.Password == "Password") {
                     var result = await _commonService.GenerateTokenAsync(request.UserName, 2);
                     return Ok(result);
                 }
             }
-            if (request.UserName == "SuperAdmin")
+            if (request.UserName == "SuperAdmin@yopmail.com")
             {
                 if (request.Password == "Password")
                 {
@@ -39,7 +39,7 @@ namespace EduConnect.Controllers
         public async Task<IActionResult> GetAllDetails()
         {
             var userIdClaim = User?.Claims?.FirstOrDefault(c => c.Type.Equals("UserId", StringComparison.OrdinalIgnoreCase));
-            var userEmail = int.TryParse(userIdClaim?.Value, out int userId) ? (userId == 1) ? "admin@gmail.com" : "SuperAdmin@gmail.com" : "";
+            var userEmail = int.TryParse(userIdClaim?.Value, out int userId) ? (userId == 2) ? "Admin@yopmail.com" : "SuperAdmin@yopmail.com" : "";
             var result = new UserModel()
             {
                 UserId = userId,
