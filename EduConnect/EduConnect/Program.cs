@@ -1,6 +1,7 @@
 ﻿using DAL.Interfaces;
 using DAL.Methods;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Model;
@@ -12,7 +13,30 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Convert PascalCase to camelCase for JSON serialization
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.SuppressModelStateInvalidFilter = false;
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(x => x.Value?.Errors.Count > 0)
+                .SelectMany(x => x.Value!.Errors.Select(e => new { Field = x.Key, Message = e.ErrorMessage }))
+                .ToList();
+
+            return new BadRequestObjectResult(new ApiResponse<object>
+            {
+                Success = false,
+                Message = "Validation failed",
+                Data = errors
+            });
+        };
+    });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthentication(options =>
@@ -84,6 +108,7 @@ _ = builder.Services.Configure<JWTOptions>(builder.Configuration.GetSection("Jwt
 builder.Services.AddTransient<ICommonService, CommonService>();
 builder.Services.AddTransient<ISchoolService, SchoolService>();
 builder.Services.AddSingleton<ICommonDAL, CommonDAL>();
+builder.Services.AddSingleton<IInMemorySchoolStore, InMemorySchoolStore>();
 var app = builder.Build();
 app.UseCors("AllowAll");
 // Configure the HTTP request pipeline.
