@@ -10,6 +10,9 @@ namespace Model
 {
     public class TeacherRegistrationRequest
     {
+        // Unique identifier (assigned when saving)
+        public int Id { get; set; }
+
         // Personal Details
         public string FirstName { get; set; }
 

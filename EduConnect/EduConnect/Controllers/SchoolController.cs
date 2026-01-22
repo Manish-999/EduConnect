@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Model;
 using Services.Interfaces;
+using System;
+using System.Collections.Generic;
 
 namespace EduConnect.Controllers
 {
@@ -24,8 +26,15 @@ namespace EduConnect.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveTeacher([FromForm] TeacherRegistrationRequest request)
         {
-            var result = await _schoolService.SaveTeacher(request);
-            return Ok(result);
+            try
+            {
+                var result = await _schoolService.SaveTeacher(request);
+                return Ok(new { success = result, teacher = request });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error saving teacher", error = ex.Message });
+            }
         }
         [HttpPost]
         public async Task<IActionResult> SaveStudent([FromForm] StudentRegistrationRequest request)
@@ -42,8 +51,17 @@ namespace EduConnect.Controllers
         [HttpPost]
         public async Task<IActionResult> GetAllTeacher()
         {
-            var result = await _schoolService.GetAllTeacher();
-            return Ok(result);
+            try
+            {
+                var result = await _schoolService.GetAllTeacher();
+                // Ensure result is never null
+                var teachers = result ?? new List<TeacherRegistrationRequest>();
+                return Ok(teachers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving teachers", error = ex.Message });
+            }
         }
         [HttpPost]
         public async Task<IActionResult> GetAllStudent()

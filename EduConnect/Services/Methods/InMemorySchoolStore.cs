@@ -1,3 +1,5 @@
+using DAL.Interfaces;
+using Model;
 using Model.DTOs;
 using Services.Interfaces;
 
@@ -15,9 +17,11 @@ namespace Services.Methods
         private int _nextSubjectId = 4; // Start from 4 since we have 3 pre-seeded subjects
 
         private readonly object _lockObject = new();
+        private readonly ICommonDAL _commonDAL;
 
-        public InMemorySchoolStore()
+        public InMemorySchoolStore(ICommonDAL commonDAL)
         {
+            _commonDAL = commonDAL;
             InitializeData();
         }
 
@@ -30,14 +34,9 @@ namespace Services.Methods
                 _subjects.Add(new SubjectDto { Id = 2, Name = "English" });
                 _subjects.Add(new SubjectDto { Id = 3, Name = "Science" });
 
-                // Pre-seed Teachers
-                _teachers.Add(new TeacherDto { Id = 1, Name = "John Smith" });
-                _teachers.Add(new TeacherDto { Id = 2, Name = "Sarah Johnson" });
-                _teachers.Add(new TeacherDto { Id = 3, Name = "Michael Brown" });
-                _teachers.Add(new TeacherDto { Id = 4, Name = "Emily Davis" });
-                _teachers.Add(new TeacherDto { Id = 5, Name = "David Wilson" });
-
-                _nextTeacherId = 6;
+                // Do NOT pre-seed teachers - only registered teachers should appear
+                // Teachers will be added via the teacher registration system (SaveTeacher API)
+                _nextTeacherId = 1; // Start from 1 for registered teachers
             }
         }
 
@@ -119,7 +118,27 @@ namespace Services.Methods
         {
             lock (_lockObject)
             {
-                return _teachers.FirstOrDefault(t => t.Id == id);
+                // First check local _teachers list
+                var localTeacher = _teachers.FirstOrDefault(t => t.Id == id);
+                if (localTeacher != null)
+                {
+                    return localTeacher;
+                }
+
+                // If not found locally, check registered teachers from CommonDAL
+                var registeredTeachers = _commonDAL.GetAllTeacher().Result;
+                var registeredTeacher = registeredTeachers.FirstOrDefault(t => t.Id == id);
+                if (registeredTeacher != null)
+                {
+                    // Convert TeacherRegistrationRequest to TeacherDto
+                    return new TeacherDto
+                    {
+                        Id = registeredTeacher.Id,
+                        Name = $"{registeredTeacher.FirstName} {registeredTeacher.LastName}".Trim()
+                    };
+                }
+
+                return null;
             }
         }
 
