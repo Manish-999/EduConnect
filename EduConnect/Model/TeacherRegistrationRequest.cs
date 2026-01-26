@@ -118,6 +118,9 @@ namespace Model
         // Agreement
         public bool TermsAccepted { get; set; }
 
+        // School Association
+        public int? SchoolId { get; set; }
+
         // Documents (File Uploads)
         public IFormFile? Photo { get; set; }
 

@@ -104,6 +104,9 @@ namespace Model
 
         public string ParentSignature { get; set; }
 
+        // School Association
+        public int? SchoolId { get; set; }
+
         // Documents (File Uploads)
         public IFormFile? Photo { get; set; }
 
