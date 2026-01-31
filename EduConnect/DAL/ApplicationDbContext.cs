@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Model.Entities;
 
 namespace DAL
@@ -7,111 +6,117 @@ namespace DAL
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
+            : base(options) { }
 
         public DbSet<School> Schools { get; set; }
+        public DbSet<Class> Classes { get; set; }
+        public DbSet<Section> Sections { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<SectionSubject> SectionSubjects { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure DateTime to UTC conversion for PostgreSQL
-            // PostgreSQL requires UTC DateTime values for timestamp with time zone
-            var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
-                v => v.Kind == DateTimeKind.Utc 
-                    ? v 
-                    : v.Kind == DateTimeKind.Local 
-                        ? v.ToUniversalTime() 
-                        : DateTime.SpecifyKind(v, DateTimeKind.Utc),
-                v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+            // ---------------- School ----------------
+            modelBuilder.Entity<School>()
+                .ToTable("schools")
+                .HasKey(s => s.Id);
 
-            var nullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
-                v => v.HasValue
-                    ? (v.Value.Kind == DateTimeKind.Utc 
-                        ? v.Value 
-                        : v.Value.Kind == DateTimeKind.Local 
-                            ? v.Value.ToUniversalTime() 
-                            : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc))
-                    : v,
-                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+            // Navigation: School -> Classes
+            modelBuilder.Entity<School>()
+                .HasMany(s => s.Classes)
+                .WithOne(c => c.School)
+                .HasForeignKey(c => c.SchoolId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Apply converters to all DateTime properties
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                foreach (var property in entityType.GetProperties())
-                {
-                    if (property.ClrType == typeof(DateTime))
-                    {
-                        property.SetValueConverter(dateTimeConverter);
-                    }
-                    else if (property.ClrType == typeof(DateTime?))
-                    {
-                        property.SetValueConverter(nullableDateTimeConverter);
-                    }
-                }
-            }
+            // Navigation: School -> Teachers
+            modelBuilder.Entity<School>()
+                .HasMany(s => s.Teachers)
+                .WithOne(t => t.School)
+                .HasForeignKey(t => t.SchoolId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure School entity
-            modelBuilder.Entity<School>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                entity.Property(e => e.SchoolName).IsRequired();
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.HasIndex(e => e.SchoolCode).IsUnique();
-                entity.HasIndex(e => e.Email);
-            });
+            // Navigation: School -> Students
+            modelBuilder.Entity<School>()
+                .HasMany(s => s.Students)
+                .WithOne(st => st.School)
+                .HasForeignKey(st => st.SchoolId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure Student entity
-            modelBuilder.Entity<Student>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                entity.Property(e => e.FirstName).IsRequired();
-                entity.Property(e => e.LastName).IsRequired();
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.HasIndex(e => e.SchoolId);
-                entity.HasIndex(e => e.AadharNumber).IsUnique();
-                
-                // Foreign key relationship
-                entity.HasOne(s => s.School)
-                    .WithMany()
-                    .HasForeignKey(s => s.SchoolId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+            // ---------------- Class ----------------
+            modelBuilder.Entity<Class>()
+                .ToTable("classes")
+                .HasKey(c => c.Id);
 
-            // Configure Teacher entity
-            modelBuilder.Entity<Teacher>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                entity.Property(e => e.FirstName).IsRequired();
-                entity.Property(e => e.LastName).IsRequired();
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
-                // Configure column sizes to match database schema
-                entity.Property(e => e.BloodGroup).HasMaxLength(10);
-                entity.Property(e => e.Percentage).HasMaxLength(20); // Match database VARCHAR(20)
-                
-                entity.HasIndex(e => e.SchoolId);
-                // Only add unique index if column exists and is unique in database
-                // Removed unique constraint on AadharNumber and EmployeeId to avoid conflicts
-                // If database has unique constraints, they will be enforced at DB level
-                
-                // Foreign key relationship
-                entity.HasOne(t => t.School)
-                    .WithMany()
-                    .HasForeignKey(t => t.SchoolId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+            modelBuilder.Entity<Class>()
+                .HasMany(c => c.Sections)
+                .WithOne(s => s.Class)
+                .HasForeignKey(s => s.ClassId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ---------------- Section ----------------
+            modelBuilder.Entity<Section>()
+                .ToTable("sections")
+                .HasKey(s => s.Id);
+
+            modelBuilder.Entity<Section>()
+                .HasMany(s => s.Students)
+                .WithOne(st => st.Section)
+                .HasForeignKey(st => st.SectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Section>()
+                .HasMany(s => s.SectionSubjects)
+                .WithOne(ss => ss.Section)
+                .HasForeignKey(ss => ss.SectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ---------------- Subject ----------------
+            modelBuilder.Entity<Subject>()
+                .ToTable("subjects")
+                .HasKey(sub => sub.Id);
+
+            modelBuilder.Entity<Subject>()
+                .HasMany(sub => sub.SectionSubjects)
+                .WithOne(ss => ss.Subject)
+                .HasForeignKey(ss => ss.SubjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ---------------- SectionSubjects ----------------
+            modelBuilder.Entity<SectionSubject>()
+                .ToTable("section_subjects")
+                .HasKey(ss => ss.Id);
+
+            // ---------------- Student ----------------
+            modelBuilder.Entity<Student>()
+                .ToTable("students")
+                .HasKey(s => s.Id);
+
+            // ---------------- Teacher ----------------
+            modelBuilder.Entity<Teacher>()
+                .ToTable("teachers")
+                .HasKey(t => t.Id);
+
+            modelBuilder.Entity<Teacher>()
+                .HasMany(sub => sub.Classes)
+                .WithOne(ss => ss.Teacher)
+                .HasForeignKey(ss => ss.ClassTeacher)
+                .OnDelete(DeleteBehavior.Cascade); 
+            
+            modelBuilder.Entity<Teacher>()
+                .HasMany(sub => sub.SectionSubject)
+                .WithOne(ss => ss.Teacher)
+                .HasForeignKey(ss => ss.TeacherId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ---------------- User ----------------
+            modelBuilder.Entity<User>()
+                .ToTable("users")
+                .HasKey(u => u.Id);
         }
     }
 }
-

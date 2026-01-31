@@ -1,5 +1,6 @@
 ﻿using DAL.Interfaces;
 using Model;
+using Model.DTOs;
 using Services.Interfaces;
 
 namespace Services.Methods
@@ -11,32 +12,32 @@ namespace Services.Methods
             _commonDal = commonDal;
         }
 
-        public async Task<bool> SaveSchool(SchoolRegistrationRequest request)
-        {
-            await _commonDal.SaveSchool(request);
-            return true;
-        }
-        public async Task<bool> SaveTeacher(TeacherRegistrationRequest request)
-        {
-            await _commonDal.SaveTeacher(request);
-            return true;
-        }
-        public async Task<bool> SaveStudent(StudentRegistrationRequest request)
-        {
-            await _commonDal.SaveStudent(request);
-            return true;
-        }
-        public async Task<List<SchoolRegistrationRequest>> GetAllSchool()
-        {
-            return await _commonDal.GetAllSchool();
-        }
-        public async Task<List<TeacherRegistrationRequest>> GetAllTeacher()
-        {
-            return await _commonDal.GetAllTeacher();
-        }
-        public async Task<List<StudentRegistrationRequest>> GetAllStudent()
-        {
-            return await _commonDal.GetAllStudent();
-        }
+        //public async Task<bool> SaveSchool(SchoolCreateDto request)
+        //{
+        //    await _commonDal.SaveSchool(request);
+        //    return true;
+        //}
+        //public async Task<bool> SaveTeacher(TeacherCreateDto request)
+        //{
+        //    await _commonDal.SaveTeacher(request);
+        //    return true;
+        //}
+        //public async Task<bool> SaveStudent(StudentCreateDto request)
+        //{
+        //    await _commonDal.SaveStudent(request);
+        //    return true;
+        //}
+        //public async Task<List<SchoolCreateDto>> GetAllSchool()
+        //{
+        //    return await _commonDal.GetAllSchool();
+        //}
+        //public async Task<List<TeacherCreateDto>> GetAllTeacher()
+        //{
+        //    return await _commonDal.GetAllTeacher();
+        //}
+        //public async Task<List<StudentCreateDto>> GetAllStudent()
+        //{
+        //    return await _commonDal.GetAllStudent();
+        //}
     }
 }

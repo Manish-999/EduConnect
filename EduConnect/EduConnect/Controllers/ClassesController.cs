@@ -1,285 +1,197 @@
+﻿using DAL;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Model;
 using Model.DTOs;
+using Model.Entities;
 using Services.Interfaces;
-
 namespace EduConnect.Controllers
 {
     [ApiController]
-    [Route("api/classes")]
+    [Route("api/[action]")]
     public class ClassesController : ControllerBase
     {
-        private readonly IInMemorySchoolStore _store;
+        private readonly ApplicationDbContext _context;
 
-        public ClassesController(IInMemorySchoolStore store)
+        public ClassesController(ApplicationDbContext context)
         {
-            _store = store;
-        }
-
-        [HttpPost]
-        public IActionResult CreateClass([FromBody] CreateClassRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.ClassName))
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "ClassName is required",
-                    Data = null
-                });
-            }
-
-            var classDto = new ClassDto
-            {
-                ClassName = request.ClassName,
-                Section = request.Section,
-                ClassTeacherId = request.ClassTeacherId
-            };
-
-            // Validate ClassTeacherId if provided
-            if (request.ClassTeacherId.HasValue)
-            {
-                var teacher = _store.GetTeacherById(request.ClassTeacherId.Value);
-                if (teacher == null)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = $"Teacher with Id {request.ClassTeacherId.Value} not found",
-                        Data = null
-                    });
-                }
-            }
-
-            var createdClass = _store.AddClass(classDto);
-
-            return Ok(new ApiResponse<ClassDto>
-            {
-                Success = true,
-                Message = "Class created successfully",
-                Data = createdClass
-            });
+            _context = context;
         }
 
         [HttpGet]
-        public IActionResult GetAllClasses()
+        public async Task<IActionResult> GetAllClasses(int schoolId) 
         {
-            var classes = _store.GetAllClasses();
-
-            return Ok(new ApiResponse<List<ClassDto>>
+            var result = _context.Classes.Where(x => x.SchoolId == schoolId).Select(x=>new ClassResponse()
             {
-                Success = true,
-                Message = "Classes retrieved successfully",
-                Data = classes
-            });
+                Id = x.Id,
+                SchoolId = x.SchoolId,
+                ClassName = x.ClassName,
+                TeacherId = x.ClassTeacher,
+                TeacherName = x.Teacher.FirstName + " " + x.Teacher.MiddleName + " " + x.Teacher.LastName,
+                Sections = x.Sections.Select(y => new SectionResponse()
+                {
+                    ClassId = y.ClassId,
+                    Id = y.Id,
+                    SectionName = y.SectionName,
+                }).ToList()
+            }).ToList();
+            return Ok(result);
+        } 
+
+        [HttpPost]
+        public async Task<IActionResult> CreateClass([FromBody] ClassDTO dto)
+        {
+            var cls = new Class
+            {
+                SchoolId = dto.SchoolId,
+                ClassTeacher = dto.ClassTeacher,
+                ClassName = dto.ClassName,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            List<Section> section = new();
+            foreach (var sectionName in dto.SectionName)
+            {
+                section.Add(new Section
+                {
+                    SectionName = sectionName,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+            cls.Sections = section;
+            _context.Classes.Add(cls);
+            await _context.SaveChangesAsync();
+            return Ok("Class Created Successfully");
         }
 
-        [HttpGet("{classId:int}/subjects")]
-        public IActionResult GetClassSubjects([FromRoute(Name = "classId")] int classId)
+        [HttpGet]
+        public async Task<IActionResult> GetAllSection(int classId)
         {
-            if (classId <= 0)
-            {
-                return BadRequest(new ApiResponse<object>
+            var result = await _context.Sections.Where(x => x.ClassId == classId)
+                .Select(x=>new SectionSubjectResponse()
                 {
-                    Success = false,
-                    Message = "classId is required and must be greater than 0",
-                    Data = null
-                });
-            }
-
-            var classEntity = _store.GetClassById(classId);
-            if (classEntity == null)
-            {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Class with Id {classId} not found",
-                    Data = null
-                });
-            }
-
-            var subjects = _store.GetClassSubjects(classId);
-
-            return Ok(new ApiResponse<List<ClassSubjectResponseDto>>
-            {
-                Success = true,
-                Message = "Subjects retrieved successfully",
-                Data = subjects
-            });
+                    Id=x.Id,
+                    ClassId = x.ClassId,
+                    ClassName = x.Class.ClassName,
+                    SectionName = x.SectionName,
+                    Subject = x.SectionSubjects.Select(y=> new SubjectResponse
+                    {
+                        SectionSubject = y.Id,
+                        SubjectId = y.SubjectId,
+                        SubjectName = y.Subject.SubjectName,
+                        TeacherId = y.TeacherId,
+                        TeacherName = y.Teacher.FirstName + " " + y.Teacher.MiddleName + " " + y.Teacher.LastName,
+                    }).ToList()
+                })
+                        .ToListAsync();
+            return Ok(result);
         }
 
-        [HttpPost("{classId:int}/subjects")]
-        public IActionResult AssignSubjectsToClass([FromRoute(Name = "classId")] int classId, [FromBody] AssignSubjectsRequest request)
+        [HttpPost]
+        public async Task<IActionResult> CreateSection([FromBody] SectionDTO dto)
         {
-            if (classId <= 0)
+            var section = new Section
             {
-                return BadRequest(new ApiResponse<object>
+                ClassId = dto.ClassId,
+                SectionName = dto.SectionName,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+
+            // Assign subjects
+            foreach (var subjectId in dto.SubjectIds)
+            {
+                _context.SectionSubjects.Add(new SectionSubject
                 {
-                    Success = false,
-                    Message = "classId is required and must be greater than 0",
-                    Data = null
+                    SectionId = section.Id,
+                    SubjectId = subjectId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 });
             }
 
-            if (request == null)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Request body is required",
-                    Data = null
-                });
-            }
-
-            var classEntity = _store.GetClassById(classId);
-            if (classEntity == null)
-            {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Class with Id {classId} not found",
-                    Data = null
-                });
-            }
-
-            if (request.SubjectIds == null || request.SubjectIds.Count == 0)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "At least one subjectId is required",
-                    Data = null
-                });
-            }
-
-            // Validate all subject IDs exist
-            var invalidSubjectIds = new List<int>();
-            foreach (var subjectId in request.SubjectIds)
-            {
-                var subject = _store.GetSubjectById(subjectId);
-                if (subject == null)
-                {
-                    invalidSubjectIds.Add(subjectId);
-                }
-            }
-
-            if (invalidSubjectIds.Count > 0)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Invalid subject IDs: {string.Join(", ", invalidSubjectIds)}",
-                    Data = null
-                });
-            }
-
-            // Check for duplicates
-            var duplicateSubjectIds = request.SubjectIds
-                .GroupBy(id => id)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToList();
-
-            if (duplicateSubjectIds.Count > 0)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Duplicate subject IDs found: {string.Join(", ", duplicateSubjectIds)}",
-                    Data = null
-                });
-            }
-
-            _store.AssignSubjectsToClass(classId, request.SubjectIds);
-
-            var updatedSubjects = _store.GetClassSubjects(classId);
-
-            return Ok(new ApiResponse<List<ClassSubjectResponseDto>>
-            {
-                Success = true,
-                Message = "Subjects assigned to class successfully",
-                Data = updatedSubjects
-            });
+            _context.Sections.Add(section);
+            await _context.SaveChangesAsync();
+            return Ok("section created successfully");
         }
 
-        [HttpPut("{classId:int}/subjects/{subjectId:int}/teacher")]
-        public IActionResult AssignTeacherToClassSubject([FromRoute(Name = "classId")] int classId, [FromRoute(Name = "subjectId")] int subjectId, [FromBody] AssignTeacherRequest request)
+        [HttpPut]
+        public async Task<IActionResult> UpdateSectionSubjects(int sectionId, [FromBody] List<int> subjectIds)
         {
-            if (classId <= 0)
+            // 1️⃣ Get the section
+            var section = await _context.Sections
+                .Include(s => s.SectionSubjects)
+                .FirstOrDefaultAsync(s => s.Id == sectionId);
+
+            if (section == null)
+                return NotFound($"Section with id {sectionId} not found.");
+
+            // 2️⃣ Remove existing SectionSubjects
+            //_context.SectionSubjects.RemoveRange(section.SectionSubjects);
+
+            // 3️⃣ Add new SectionSubjects
+            foreach (var subjectId in subjectIds.Distinct()) // remove duplicates
             {
-                return BadRequest(new ApiResponse<object>
+                _context.SectionSubjects.Add(new SectionSubject
                 {
-                    Success = false,
-                    Message = "classId is required and must be greater than 0",
-                    Data = null
+                    SectionId = section.Id,
+                    SubjectId = subjectId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 });
             }
 
-            if (subjectId <= 0)
+            await _context.SaveChangesAsync();
+
+            return Ok(new
             {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "subjectId is required and must be greater than 0",
-                    Data = null
-                });
-            }
-
-            if (request == null)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Request body is required",
-                    Data = null
-                });
-            }
-
-            var classEntity = _store.GetClassById(classId);
-            if (classEntity == null)
-            {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Class with Id {classId} not found",
-                    Data = null
-                });
-            }
-
-            var subject = _store.GetSubjectById(subjectId);
-            if (subject == null)
-            {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Subject with Id {subjectId} not found",
-                    Data = null
-                });
-            }
-
-            var teacher = _store.GetTeacherById(request.TeacherId);
-            if (teacher == null)
-            {
-                return NotFound(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Teacher with Id {request.TeacherId} not found",
-                    Data = null
-                });
-            }
-
-            // Assign teacher to class subject (store method will create mapping if it doesn't exist)
-            _store.AssignTeacherToClassSubject(classId, subjectId, request.TeacherId);
-
-            var updatedSubjects = _store.GetClassSubjects(classId);
-            var updatedSubject = updatedSubjects.FirstOrDefault(s => s.SubjectId == subjectId);
-
-            return Ok(new ApiResponse<ClassSubjectResponseDto>
-            {
-                Success = true,
-                Message = "Teacher assigned to class subject successfully",
-                Data = updatedSubject
+                message = "Section subjects updated successfully",
+                sectionId = section.Id,
+                subjects = subjectIds
             });
+        }
+        [HttpPut]
+        public async Task<IActionResult> UpdateSectionSubjectsteacher(int sectionSubjectId, int teacherId)
+        {
+            // 1️⃣ Get the section
+            var sectionSubject = await _context.SectionSubjects
+                .FirstOrDefaultAsync(s => s.Id == sectionSubjectId);
+
+            if (sectionSubject == null)
+                return NotFound($"Section subject with id {sectionSubjectId} not found.");
+
+            // 2️⃣ Remove existing SectionSubjects
+            //_context.SectionSubjects.RemoveRange(section.SectionSubjects);
+
+            // 3️⃣ Add new SectionSubjects
+            sectionSubject.TeacherId = teacherId;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Section subjects updated successfully",
+                sectionId = sectionSubject.Id
+            });
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetAllSubject(int schoolId) => Ok(await _context.Subjects.Where(x=>x.SchoolId==schoolId).ToListAsync());
+
+        [HttpPost]
+        public async Task<IActionResult> CreateSubject([FromBody] SubjectDTO dto)
+        {
+            var subject = new Subject
+            {
+                SchoolId = dto.SchoolId,
+                SubjectName = dto.SubjectName,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Subjects.Add(subject);
+            await _context.SaveChangesAsync();
+            return Ok(subject);
         }
     }
 }

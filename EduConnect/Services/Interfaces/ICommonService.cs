@@ -9,6 +9,6 @@ namespace Services.Interfaces
 {
     public interface ICommonService
     {
-        Task<JwtTokenModel> GenerateTokenAsync(string userName, long userId);
+        Task<JwtTokenModel> GenerateTokenAsync(int userId, int roleId);
     }
 }

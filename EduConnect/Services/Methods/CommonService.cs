@@ -19,7 +19,7 @@ namespace Services.Methods
 
             _jwtsecretOptions = options.CurrentValue;
         }
-        public async Task<JwtTokenModel> GenerateTokenAsync(string userName, long userId)
+        public async Task<JwtTokenModel> GenerateTokenAsync(int userId, int roleId)
         {
             try
             {
@@ -28,9 +28,8 @@ namespace Services.Methods
                     TokenType = "Bearer",
                     Subject = new ClaimsIdentity(new[]
                     {
-                    new Claim("Id", Guid.NewGuid().ToString()),
-                            //new(ClaimTypes.Name, userName),
-                            new("UserId", userId.ToString())
+                            new Claim("UserId", userId.ToString()),
+                            new Claim("RoleId", roleId.ToString())
                  }),
                     Expires = DateTime.UtcNow.AddMinutes(_jwtsecretOptions.TimeoutInMins),
                     SigningCredentials = new SigningCredentials

@@ -114,33 +114,33 @@ namespace EduConnect.Controllers
             }
         }
 
-        [HttpPost]
-        public IActionResult CreateTeacher([FromBody] CreateTeacherRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Name is required",
-                    Data = null
-                });
-            }
+        //[HttpPost]
+        //public IActionResult CreateTeacher([FromBody] CreateTeacherRequest request)
+        //{
+        //    if (string.IsNullOrWhiteSpace(request.Name))
+        //    {
+        //        return BadRequest(new ApiResponse<object>
+        //        {
+        //            Success = false,
+        //            Message = "Name is required",
+        //            Data = null
+        //        });
+        //    }
 
-            var teacherDto = new TeacherDto
-            {
-                Name = request.Name
-            };
+        //    var teacherDto = new TeacherDto
+        //    {
+        //        Name = request.Name
+        //    };
 
-            var createdTeacher = _store.AddTeacher(teacherDto);
+        //    var createdTeacher = _store.AddTeacher(teacherDto);
 
-            return Ok(new ApiResponse<TeacherDto>
-            {
-                Success = true,
-                Message = "Teacher created successfully",
-                Data = createdTeacher
-            });
-        }
+        //    return Ok(new ApiResponse<TeacherDto>
+        //    {
+        //        Success = true,
+        //        Message = "Teacher created successfully",
+        //        Data = createdTeacher
+        //    });
+        //}
     }
 }
 
