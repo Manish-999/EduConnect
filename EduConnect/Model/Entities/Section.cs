@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -27,6 +27,7 @@ namespace Model.Entities
         [ForeignKey("ClassId")]
         public Class? Class { get; set; }
 
+        [NotMapped]
         public ICollection<Student> Students { get; set; } = new List<Student>();
         public ICollection<SectionSubject> SectionSubjects { get; set; } = new List<SectionSubject>();
     }

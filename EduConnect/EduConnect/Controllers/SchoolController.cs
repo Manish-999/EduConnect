@@ -1,5 +1,6 @@
-﻿using DAL;
+using DAL;
 using DAL.Helpers;
+using EduConnect.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -60,20 +61,11 @@ namespace EduConnect.Controllers
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                // Convert files to byte[]
-                if (dto.SchoolLogoFile != null)
-                {
-                    using var ms = new MemoryStream();
-                    await dto.SchoolLogoFile.CopyToAsync(ms);
-                    school.SchoolLogo = ms.ToArray();
-                }
-
-                if (dto.AffiliationCertificateFile != null)
-                {
-                    using var ms = new MemoryStream();
-                    await dto.AffiliationCertificateFile.CopyToAsync(ms);
-                    school.AffiliationCertificate = ms.ToArray();
-                }
+                school.SchoolLogoPath = await FileHelper.SaveFileAsync(dto.SchoolLogoFile, "schools/logos");
+                school.AffiliationCertificatePath = await FileHelper.SaveFileAsync(
+                    dto.AffiliationCertificateFile,
+                    "schools/certificates"
+                );
 
                 _context.Schools.Add(school);
                 await _context.SaveChangesAsync();
@@ -239,22 +231,20 @@ namespace EduConnect.Controllers
         {
             try
             {
-                if (dto.SchoolId <= 0)
-                    return BadRequest("SchoolId is required");
+                // Auth is enforced manually so we can return clear JSON errors (not empty 401)
+                var auth = await SchoolAccessHelper.ResolveAsync(HttpContext, _context);
+                if (auth == null)
+                    return Unauthorized(new { message = "Authentication required. Please log in again." });
 
-                // Helper to convert IFormFile to byte[]
-                async Task<byte[]>? FileToBytes(IFormFile? file)
-                {
-                    if (file == null) return null;
-                    using var ms = new MemoryStream();
-                    await file.CopyToAsync(ms);
-                    return ms.ToArray();
-                }
+                var (success, schoolId, errorMessage, statusCode) =
+                    await SchoolAccessHelper.ResolveWritableSchoolIdAsync(auth, _context, dto.SchoolId);
+
+                if (!success)
+                    return StatusCode(statusCode, new { message = errorMessage });
 
                 var student = new Student
                 {
-                    SectionId = dto.SectionId,
-                    SchoolId = dto.SchoolId,
+                    SchoolId = schoolId,
                     FirstName = dto.FirstName,
                     MiddleName = dto.MiddleName,
                     LastName = dto.LastName,
@@ -300,30 +290,30 @@ namespace EduConnect.Controllers
                     HostelRequired = dto.HostelRequired,
                     ParentSignature = dto.ParentSignature,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
                 };
 
-                // Convert all files
-                student.Photo = await FileToBytes(dto.PhotoFile);
-                student.BirthCertificate = await FileToBytes(dto.BirthCertificateFile);
-                student.StudentAadhar = await FileToBytes(dto.StudentAadharFile);
-                student.ParentAadharDoc = await FileToBytes(dto.ParentAadharDocFile);
-                student.ReportCard = await FileToBytes(dto.ReportCardFile);
-                student.TransferCertificate = await FileToBytes(dto.TransferCertificateFile);
-                student.CasteCertificate = await FileToBytes(dto.CasteCertificateFile);
-                student.IncomeCertificate = await FileToBytes(dto.IncomeCertificateFile);
+                student.PhotoPath = await FileHelper.SaveFileAsync(dto.PhotoFile, "students/photos");
+                student.BirthCertificatePath = await FileHelper.SaveFileAsync(dto.BirthCertificateFile, "students/documents");
+                student.StudentAadharPath = await FileHelper.SaveFileAsync(dto.StudentAadharFile, "students/documents");
+                student.ParentAadharDocPath = await FileHelper.SaveFileAsync(dto.ParentAadharDocFile, "students/documents");
+                student.ReportCardPath = await FileHelper.SaveFileAsync(dto.ReportCardFile, "students/documents");
+                student.TransferCertificatePath = await FileHelper.SaveFileAsync(dto.TransferCertificateFile, "students/documents");
+                student.CasteCertificatePath = await FileHelper.SaveFileAsync(dto.CasteCertificateFile, "students/documents");
+                student.IncomeCertificatePath = await FileHelper.SaveFileAsync(dto.IncomeCertificateFile, "students/documents");
 
                 _context.Students.Add(student);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { success = true, studentId = student.Id });
+                return Ok(new { success = true, studentId = student.Id, schoolId = student.SchoolId });
             }
             catch (Exception ex)
             {
+                var detail = ex.InnerException?.Message ?? ex.Message;
                 return StatusCode(500, new
                 {
                     message = "Error saving student",
-                    error = ex.Message
+                    error = detail
                 });
             }
         }
@@ -366,20 +356,23 @@ namespace EduConnect.Controllers
         [HttpGet]
         public async Task<IActionResult> GetStudents([FromQuery] int schoolId, [FromQuery] int sectionId = 0)
         {
-            if (schoolId <= 0)
-                return BadRequest(new { message = "SchoolId is required" });
-
             try
             {
+                var auth = await SchoolAccessHelper.ResolveAsync(HttpContext, _context);
+                if (auth == null)
+                    return Unauthorized(new { message = "Authentication required. Please log in again." });
+
+                var (success, effectiveSchoolId, errorMessage, statusCode) =
+                    await SchoolAccessHelper.ResolveReadableSchoolIdAsync(auth, _context, schoolId);
+
+                if (!success)
+                    return StatusCode(statusCode, new { message = errorMessage });
+
                 var query = _context.Students
-                    .Where(s => s.SchoolId == schoolId)
-                    .AsQueryable();
+                    .AsNoTracking()
+                    .Where(s => s.SchoolId == effectiveSchoolId);
 
-                if (sectionId != null || sectionId != 0)
-                {
-                    query = query.Where(s => s.SectionId == sectionId);
-                }
-
+                // section_id is not yet in the students table schema
                 var students = await query
                     .OrderByDescending(s => s.CreatedAt)
                     .ToListAsync();

@@ -1,4 +1,4 @@
-﻿using DAL;
+using DAL;
 using DAL.Interfaces;
 using DAL.Methods;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -51,6 +51,8 @@ builder.Services.AddAuthentication(options =>
 {
     o.RequireHttpsMetadata = false;
     o.SaveToken = true;
+    // Keep JWT claim names exactly as issued (UserId, RoleId, SchoolId)
+    o.MapInboundClaims = false;
 
     o.TokenValidationParameters = new TokenValidationParameters
     {
@@ -58,7 +60,8 @@ builder.Services.AddAuthentication(options =>
         (Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured"))),
         ValidateIssuer = false,
         ValidateAudience = false,
-        ValidateIssuerSigningKey = true
+        ValidateIssuerSigningKey = true,
+        ClockSkew = TimeSpan.FromMinutes(2),
     };
 });
 builder.Services.AddCors(options =>

@@ -72,19 +72,20 @@ namespace Model.Entities
         public string? Aadhar { get; set; }
 
         [Column("password_hash")]
+        [JsonIgnore]
         public string? PasswordHash { get; set; }
 
         [Column("terms_accepted")]
         public bool TermsAccepted { get; set; }
 
-        [Column("school_logo")]
-        public byte[]? SchoolLogo { get; set; }
+        [Column("school_logo_path")]
+        public string? SchoolLogoPath { get; set; }
 
         [NotMapped]
         public IFormFile? SchoolLogoFile { get; set; }
 
-        [Column("affiliation_certificate")]
-        public byte[]? AffiliationCertificate { get; set; }
+        [Column("affiliation_certificate_path")]
+        public string? AffiliationCertificatePath { get; set; }
 
         [NotMapped]
         public IFormFile? AffiliationCertificateFile { get; set; }
@@ -98,6 +99,7 @@ namespace Model.Entities
         public ICollection<Teacher> Teachers { get; set; } = new List<Teacher>();
         [JsonIgnore] // <-- Add this
         public ICollection<Student> Students { get; set; } = new List<Student>(); 
+        [JsonIgnore]
         public ICollection<Class> Classes { get; set; } = new List<Class>();
     }
 }

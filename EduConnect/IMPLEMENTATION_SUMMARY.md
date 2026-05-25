@@ -44,12 +44,12 @@
 
 ### 6. Example API Endpoints
 - ✅ All existing endpoints now use database:
-  - `POST /tc/SaveSchool` - Saves school to database
-  - `POST /tc/SaveTeacher` - Saves teacher to database
-  - `POST /tc/SaveStudent` - Saves student to database
-  - `POST /tc/GetAllSchool` - Returns all schools from database
-  - `POST /tc/GetAllTeacher` - Returns teachers (filtered by SchoolId in controller)
-  - `POST /tc/GetAllStudent` - Returns students (filtered by SchoolId in controller)
+  - `POST /api/SaveSchool` - Saves school to database
+  - `POST /api/SaveTeacher` - Saves teacher to database
+  - `POST /api/SaveStudent` - Saves student to database
+  - `POST /api/GetAllSchool` - Returns all schools from database
+  - `POST /api/GetAllTeacher` - Returns teachers (filtered by SchoolId in controller)
+  - `POST /api/GetAllStudent` - Returns students (filtered by SchoolId in controller)
 
 ## Database Setup Instructions
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -55,7 +55,7 @@ namespace Model.DTOs
         public string? TransportRequired { get; set; }
         public string? HostelRequired { get; set; }
         public string? ParentSignature { get; set; }
-        public int SectionId { get; set; }
+        public int? SectionId { get; set; }
 
         // Files
         public IFormFile? PhotoFile { get; set; }

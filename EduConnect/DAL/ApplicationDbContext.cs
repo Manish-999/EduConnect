@@ -64,12 +64,6 @@ namespace DAL
                 .HasKey(s => s.Id);
 
             modelBuilder.Entity<Section>()
-                .HasMany(s => s.Students)
-                .WithOne(st => st.Section)
-                .HasForeignKey(st => st.SectionId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Section>()
                 .HasMany(s => s.SectionSubjects)
                 .WithOne(ss => ss.Section)
                 .HasForeignKey(ss => ss.SectionId)
@@ -95,6 +89,10 @@ namespace DAL
             modelBuilder.Entity<Student>()
                 .ToTable("students")
                 .HasKey(s => s.Id);
+
+            // students table has no section_id column yet — do not infer Section FK
+            modelBuilder.Entity<Section>()
+                .Ignore(s => s.Students);
 
             // ---------------- Teacher ----------------
             modelBuilder.Entity<Teacher>()

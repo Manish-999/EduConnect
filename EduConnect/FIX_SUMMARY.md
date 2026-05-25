@@ -94,10 +94,10 @@ The application will:
    - Foreign key constraints
 
 2. **APIs will work**:
-   - `POST /tc/SaveSchool` - Saves to `schools` table via EF Core
-   - `POST /tc/GetAllSchool` - Reads from `schools` table via EF Core
-   - `POST /tc/SaveStudent` - Saves to `students` table via EF Core
-   - `POST /tc/GetAllStudent` - Reads from `students` table via EF Core (filtered by SchoolId)
+   - `POST /api/SaveSchool` - Saves to `schools` table via EF Core
+   - `POST /api/GetAllSchool` - Reads from `schools` table via EF Core
+   - `POST /api/SaveStudent` - Saves to `students` table via EF Core
+   - `POST /api/GetAllStudent` - Reads from `students` table via EF Core (filtered by SchoolId)
 
 ## Troubleshooting
 

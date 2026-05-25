@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -19,21 +19,28 @@ namespace Services.Methods
 
             _jwtsecretOptions = options.CurrentValue;
         }
-        public async Task<JwtTokenModel> GenerateTokenAsync(int userId, int roleId)
+        public async Task<JwtTokenModel> GenerateTokenAsync(int userId, int roleId, int? schoolId = null)
         {
             try
             {
+                var claims = new List<Claim>
+                {
+                    new Claim("UserId", userId.ToString()),
+                    new Claim("RoleId", roleId.ToString()),
+                };
+
+                if (schoolId.HasValue && schoolId.Value > 0)
+                {
+                    claims.Add(new Claim("SchoolId", schoolId.Value.ToString()));
+                }
+
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     TokenType = "Bearer",
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                            new Claim("UserId", userId.ToString()),
-                            new Claim("RoleId", roleId.ToString())
-                 }),
+                    Subject = new ClaimsIdentity(claims),
                     Expires = DateTime.UtcNow.AddMinutes(_jwtsecretOptions.TimeoutInMins),
                     SigningCredentials = new SigningCredentials
-                            (new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsecretOptions.SecretKey)),
+                            (new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtsecretOptions.SecretKey)),
                             SecurityAlgorithms.HmacSha256Signature)
                 };
                 JwtSecurityTokenHandler tokenHandler = new();

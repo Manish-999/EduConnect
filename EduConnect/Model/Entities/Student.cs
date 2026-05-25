@@ -148,37 +148,37 @@ namespace Model.Entities
         [Column("parent_signature")]
         public string? ParentSignature { get; set; }
 
-        // File properties
-        [Column("photo")]
-        public byte[]? Photo { get; set; }
+        // File properties stored as paths in the database
+        [Column("photo_path")]
+        public string? PhotoPath { get; set; }
         [NotMapped] public IFormFile? PhotoFile { get; set; }
 
-        [Column("birth_certificate")]
-        public byte[]? BirthCertificate { get; set; }
+        [Column("birth_certificate_path")]
+        public string? BirthCertificatePath { get; set; }
         [NotMapped] public IFormFile? BirthCertificateFile { get; set; }
 
-        [Column("student_aadhar")]
-        public byte[]? StudentAadhar { get; set; }
+        [Column("student_aadhar_path")]
+        public string? StudentAadharPath { get; set; }
         [NotMapped] public IFormFile? StudentAadharFile { get; set; }
 
-        [Column("parent_aadhar_doc")]
-        public byte[]? ParentAadharDoc { get; set; }
+        [Column("parent_aadhar_doc_path")]
+        public string? ParentAadharDocPath { get; set; }
         [NotMapped] public IFormFile? ParentAadharDocFile { get; set; }
 
-        [Column("report_card")]
-        public byte[]? ReportCard { get; set; }
+        [Column("report_card_path")]
+        public string? ReportCardPath { get; set; }
         [NotMapped] public IFormFile? ReportCardFile { get; set; }
 
-        [Column("transfer_certificate")]
-        public byte[]? TransferCertificate { get; set; }
+        [Column("transfer_certificate_path")]
+        public string? TransferCertificatePath { get; set; }
         [NotMapped] public IFormFile? TransferCertificateFile { get; set; }
 
-        [Column("caste_certificate")]
-        public byte[]? CasteCertificate { get; set; }
+        [Column("caste_certificate_path")]
+        public string? CasteCertificatePath { get; set; }
         [NotMapped] public IFormFile? CasteCertificateFile { get; set; }
 
-        [Column("income_certificate")]
-        public byte[]? IncomeCertificate { get; set; }
+        [Column("income_certificate_path")]
+        public string? IncomeCertificatePath { get; set; }
         [NotMapped] public IFormFile? IncomeCertificateFile { get; set; }
 
         [Column("created_at")]
@@ -186,13 +186,13 @@ namespace Model.Entities
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        [Column("section_id")]
-        public int SectionId { get; set; }
+
+        /// <summary>Optional — not persisted until sections are linked in DB schema.</summary>
+        [NotMapped]
+        public int? SectionId { get; set; }
 
         [ForeignKey("SchoolId")]
-        [JsonIgnore] // <-- Add this
+        [JsonIgnore]
         public School? School { get; set; }
-        [ForeignKey("SectionId")]
-        public Section? Section { get; set; }
     }
 }
